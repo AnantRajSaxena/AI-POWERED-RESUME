@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Login — Maze Game</title>
+    <style>
+      body{margin:0;height:100vh;display:flex;align-items:center;justify-content:center;background:#05220f;color:#e6efe8;font-family:Inter,Segoe UI,Arial}
+      .card{background:#07321a;padding:28px;border-radius:12px;min-width:320px}
+      input{width:100%;padding:10px;border-radius:8px;border:none;margin-bottom:10px;background:rgba(255,255,255,0.03);color:#e6efe8}
+      button{width:100%;padding:10px;border-radius:8px;border:none;background:#0b6623;color:#fff;font-weight:600}
+      .note{margin-top:10px;color:#bfe8c9;font-size:13px}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h2 style="margin:0 0 12px 0">Sign in to Maze</h2>
+      <input id="username" placeholder="Enter username">
+      <div style="display:flex;gap:8px">
+        <button id="login" style="flex:1">Sign in</button>
+        <a href="/register" style="display:inline-block;text-decoration:none;width:100%"><button style="width:100%;background:#0a8b3a">Register</button></a>
+      </div>
+      <div class="note">Your account and progress are stored in the server SQLite database (<code>app.db</code>).</div>
+      <div id="msg" style="margin-top:10px;color:#dfffe0;font-size:13px"></div>
+    </div>
+
+    <script>
+      const msg = document.getElementById('msg');
+      function showMsg(text, isError){ msg.textContent = text; msg.style.color = isError ? '#ffd6d6' : '#dfffe0'; }
+
+      document.getElementById('login').addEventListener('click', async ()=>{
+        const u = (document.getElementById('username').value||'').trim();
+        if(!u){ showMsg('Please enter a username', true); return; }
+        const res = await fetch('/login', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({username: u})});
+        if(!res.ok){ showMsg('Login failed', true); return; }
+        // successful login -> go to game
+        window.location = '/';
+      });
+
+      // registration moved to separate page
+    </script>
+  </body>
+</html>

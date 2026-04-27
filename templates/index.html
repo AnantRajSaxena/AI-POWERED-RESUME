@@ -1,177 +1,173 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Puzzle — World-Model RL</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Maze — Solve & Ask for Hint</title>
     <style>
-      body { font-family: Arial, sans-serif; padding: 20px }
-      #grid { font-family: monospace; }
-      button { margin: 4px }
-      table.grid { border-collapse: collapse; margin-top: 8px }
-      table.grid td { width: 22px; height: 22px; text-align:center; vertical-align:middle; border:1px solid #ddd }
-      td.wall { background:#222 }
-      td.floor { background:#fff }
-      td.agent { background: #2b8; color:#000 }
-      td.goal { background:#f44; color:#fff }
-      td.path { background:#ffeb3b }
+      :root{
+        --bg:#05220f; --card:#072b17; --accent:#0b6623; --muted:#cfead5; --danger:#fb7185; --path:#ffd54d;
+        --cell-size:28px;
+      }
+      *{box-sizing:border-box}
+      body{margin:0;font-family:Inter,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#071023 0%, #0c1724 100%);color:#e6eef6;min-height:100vh}
+      .container{max-width:1100px;margin:18px auto;padding:18px}
+      header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+      h1{font-size:18px;margin:0}
+      .controls{Display:flex;gap:8px;align-items:center}
+      select,button{font-size:14px;padding:8px 10px;border-radius:8px;border:none;background:#0f172b;color:var(--accent);cursor:pointer}
+      button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+      button.primary{background:linear-gradient(90deg,var(--accent),#34d399);color:#032;box-shadow:0 6px 18px rgba(16,185,129,0.12)}
+      main{display:flex;gap:18px;margin-top:14px}
+      .left{flex:1}
+      .right{width:300px}
+      .panel{background:linear-gradient(180deg,rgba(255,255,255,0.02),rgba(0,0,0,0.02));padding:12px;border-radius:10px}
+      .info-row{display:flex;gap:12px;align-items:center;margin-bottom:8px}
+      .badge{background:rgba(255,255,255,0.03);padding:6px 10px;border-radius:999px;color:var(--muted);font-weight:600}
+      #grid{display:flex;justify-content:center;align-items:center;padding:10px}
+      table.grid{border-collapse:collapse;box-shadow:0 6px 18px rgba(2,6,23,0.6)}
+      table.grid td{width:var(--cell-size);height:var(--cell-size);border:1px solid rgba(255,255,255,0.03);transition:background 120ms;}
+      td.wall{background:#0b1220}
+      td.floor{background:#071b2b}
+      td.agent{background:var(--accent);color:#04302a}
+      td.goal{background:var(--danger)}
+      td.path{background:var(--path)}
+      .controls-grid{display:flex;gap:8px;margin-top:10px;align-items:center}
+      .arrow{width:44px;height:44px;border-radius:8px;display:inline-grid;place-items:center;background:rgba(255,255,255,0.02);cursor:pointer}
+      .small{font-size:12px;color:var(--muted)}
+      .hint{margin-top:8px}
+      footer{margin-top:16px;color:var(--muted);font-size:13px}
+
+      /* responsive */
+      @media (max-width:880px){main{flex-direction:column}.right{width:100%}}
     </style>
   </head>
   <body>
-    <h1>Maze — Solve & Ask for Hint</h1>
-    <div>
-      <label>Level: <select id="levelSelect"></select></label>
-      <button onclick="setLevel()">Go</button>
-      <button onclick="reset()">Reset</button>
-      <button onclick="help()">Ask for Next Step</button>
-      <button onclick="showPath()">Show Full Path</button>
-      <button onclick="autoFollow()">Auto-Follow Path</button>
-    </div>
-    <div style="margin-top:8px">
-      <strong>Total Score:</strong> <span id="totalScore">0</span>
-      &nbsp;&nbsp; <strong>Level Help Count:</strong> <span id="helpCount">0</span>
-      &nbsp;&nbsp; <strong>Unlocked:</strong> <span id="unlocked">1</span>
-    </div>
-    <div style="margin-top:8px">
-      <button onclick="step(0)">Up</button>
-      <button onclick="step(1)">Down</button>
-      <button onclick="step(2)">Left</button>
-      <button onclick="step(3)">Right</button>
-    </div>
-    <div id="grid"></div>
-    <div>
-      <button onclick="startTrain()">Start Training (background)</button>
+    <div class="container">
+      <header>
+        <h1>Maze — Solve & Ask for Hint</h1>
+        <div class="controls">
+          <label class="small">Level:
+            <select id="levelSelect" aria-label="Level selector"></select>
+          </label>
+          <button class="primary" id="goBtn">Go</button>
+          <button class="secondary" id="resetBtn">Reset</button>
+          <button id="helpBtn">Hint</button>
+          <div style="width:12px"></div>
+          <button id="logoutBtn">Logout</button>
+        </div>
+      </header>
+
+      <main>
+        <div class="left">
+          <div class="panel">
+            <div class="info-row">
+              <div class="badge">Total Score: <span id="totalScore">0</span></div>
+              <div class="badge">Help Count: <span id="helpCount">0</span></div>
+              <div class="badge">Unlocked: <span id="unlocked">1</span></div>
+              <div style="flex:1"></div>
+              <div class="small">Controls: <strong>Arrows</strong> / <strong>WASD</strong></div>
+            </div>
+            <div id="grid"></div>
+            <div class="controls-grid">
+              <div class="arrow" id="upBtn">▲</div>
+              <div class="arrow" id="downBtn">▼</div>
+              <div class="arrow" id="leftBtn">◀</div>
+              <div class="arrow" id="rightBtn">▶</div>
+              <button id="showPathBtn">Show Path</button>
+              <button id="autoFollowBtn">Auto-Follow</button>
+            </div>
+          </div>
+        </div>
+
+        <aside class="right">
+          <div class="panel">
+            <h3 style="margin:0 0 8px 0">Level Info</h3>
+            <div class="small" id="levelInfo">Loading...</div>
+            <div class="hint" id="hintText"></div>
+            <hr style="opacity:0.06;margin:12px 0">
+            <button id="trainBtn">Start Training</button>
+            <div style="height:8px"></div>
+            <div class="small">Tip: Ask for a hint to highlight next step, or use Auto-Follow to play the path.</div>
+          </div>
+        </aside>
+      </main>
+
+      <footer>Responsive, keyboard-enabled UI — press <strong>?</strong> for controls.</footer>
     </div>
 
     <script>
+      // Helper: fetch current state and render grid
       async function fetchState(){
         const res = await fetch('/state');
         const j = await res.json();
-        const s = j.state;
-        const w = j.width, h = j.height;
+        const s = j.state; const w = j.width, h = j.height;
         document.getElementById('totalScore').textContent = j.total_score || 0;
         document.getElementById('helpCount').textContent = j.help_count || 0;
         document.getElementById('unlocked').textContent = j.unlocked_level || 1;
+        document.getElementById('levelInfo').textContent = 'Level ' + (j.level||1) + ' — ' + w + 'x' + h;
 
-        // render as HTML table
-        const tbl = document.createElement('table');
-        tbl.className = 'grid';
+        // build table
+        const tbl = document.createElement('table'); tbl.className='grid';
         for(let y=0;y<h;y++){
           const tr = document.createElement('tr');
           for(let x=0;x<w;x++){
             const td = document.createElement('td');
             const v = s[y*w + x];
-            if(v===1){ td.className='wall'; td.textContent=''; }
-            else if(v===2){ td.className='agent'; td.textContent='O'; }
-            else if(v===3){ td.className='goal'; td.textContent='X'; }
-            else { td.className='floor'; td.textContent=''; }
-            td.dataset.pos = y+','+x;
+            if(v===1){ td.className='wall'; }
+            else if(v===2){ td.className='agent'; td.textContent=''; }
+            else if(v===3){ td.className='goal'; td.textContent=''; }
+            else { td.className='floor'; }
             tr.appendChild(td);
           }
           tbl.appendChild(tr);
         }
-        const container = document.getElementById('grid');
-        container.innerHTML = '';
-        container.appendChild(tbl);
-        // populate level selector if empty
+        const container = document.getElementById('grid'); container.innerHTML=''; container.appendChild(tbl);
+
+        // populate level selector
         const sel = document.getElementById('levelSelect');
-        if(sel.options.length===0){
-          for(let i=1;i<=100;i++) sel.appendChild(new Option(i,i));
-        }
-        // disable levels above unlocked
+        if(sel.options.length===0){ for(let i=1;i<=100;i++) sel.appendChild(new Option(i,i)); }
         const unlocked = j.unlocked_level || 1;
-        for(let i=0;i<sel.options.length;i++){
-          sel.options[i].disabled = (i+1) > unlocked;
-        }
+        for(let i=0;i<sel.options.length;i++){ sel.options[i].disabled = (i+1) > unlocked; }
         sel.value = j.level || 1;
       }
 
-      async function step(action){
-        await fetch('/step', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action})});
-        fetchState();
-      }
-
-      async function reset(){
-        await fetch('/reset');
-        fetchState();
-      }
-
-      async function setLevel(){
-        const lvl = Number(document.getElementById('levelSelect').value || 1);
-        const res = await fetch('/level', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({level: lvl})});
-        if(!res.ok){
-          const j = await res.json();
-          alert('Level locked. Reach level: ' + j.unlocked_level);
-          return;
-        }
-        await res.json();
-        fetchState();
-      }
+      async function doStep(a){ await fetch('/step', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:a})}); await fetchState(); }
+      async function doReset(){ await fetch('/reset'); await fetchState(); }
+      async function doSetLevel(){ const lvl = Number(document.getElementById('levelSelect').value||1); const res = await fetch('/level',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({level:lvl})}); if(!res.ok){const j=await res.json(); alert('Level locked. Reach level: ' + j.unlocked_level); return;} await res.json(); await fetchState(); }
 
       let lastPath = null;
-      async function help(){
-        const res = await fetch('/help');
-        const j = await res.json();
-        if(j.action===null){
-          alert('No path found');
-          return;
-        }
-        lastPath = j.path || null;
-        const mapping = ['Up','Down','Left','Right'];
-        if(confirm('Suggestion: ' + mapping[j.action] + ' (source: ' + j.source + ').\nApply suggestion?')){
-          await step(j.action);
-          fetchState();
-        } else {
-          // highlight next cell
-          highlightPath(j.path, 1);
-        }
+      async function getHint(){ const res = await fetch('/help'); const j = await res.json(); if(j.action===null){ alert('No path found'); return; } lastPath = j.path || null; document.getElementById('hintText').textContent = 'Suggestion: ' + ['Up','Down','Left','Right'][j.action] + ' (source: ' + j.source + ')'; return j; }
+
+      function highlightPath(path, upto){ if(!path) return; const tbl = document.querySelector('table.grid'); if(!tbl) return; tbl.querySelectorAll('td.path').forEach(td=>td.className = td.className==='agent' ? 'agent' : (td.className==='goal'? 'goal':'floor'));
+        for(let i=0;i<Math.min(upto||path.length, path.length); i++){ const p = path[i]; const td = tbl.rows[p[0]].cells[p[1]]; if(td.className !== 'agent' && td.className !== 'goal') td.className = 'path'; }
       }
 
-      function highlightPath(path, upto){
-        // path is list of [y,x]
-        if(!path) return;
-        const tbl = document.querySelector('table.grid');
-        // clear previous path
-        tbl.querySelectorAll('td.path').forEach(td=>td.className = td.className==='agent' ? 'agent' : (td.className==='goal'? 'goal':'floor'));
-        for(let i=0;i<Math.min((upto||path.length), path.length); i++){
-          const p = path[i];
-          const y = p[0], x = p[1];
-          const td = tbl.rows[y].cells[x];
-          if(td.className !== 'agent' && td.className !== 'goal') td.className = 'path';
-        }
-      }
+      async function showPath(){ if(!lastPath){ alert('Ask for hint first'); return; } highlightPath(lastPath, lastPath.length); }
 
-      function showPath(){
-        if(!lastPath) {
-          alert('Ask for help first to compute path.');
-          return;
-        }
-        highlightPath(lastPath, lastPath.length);
-      }
+      async function autoFollow(){ if(!lastPath){ alert('Ask for hint first'); return; } for(let i=1;i<lastPath.length;i++){ const cur = lastPath[i-1], nxt = lastPath[i]; const dy = nxt[0]-cur[0], dx = nxt[1]-cur[1]; let a=0; if(dy==-1) a=0; else if(dy==1) a=1; else if(dx==-1) a=2; else a=3; await doStep(a); await new Promise(r=>setTimeout(r, 160)); } await fetchState(); }
 
-      async function autoFollow(){
-        if(!lastPath){
-          alert('Ask for help first to compute path.');
-          return;
-        }
-        // move along path (skip first which is current)
-        for(let i=1;i<lastPath.length;i++){
-          const cur = lastPath[i-1];
-          const nxt = lastPath[i];
-          const dy = nxt[0]-cur[0];
-          const dx = nxt[1]-cur[1];
-          let a=0;
-          if(dy==-1) a=0; else if(dy==1) a=1; else if(dx==-1) a=2; else a=3;
-          await step(a);
-          await new Promise(r=>setTimeout(r, 150));
-        }
-        fetchState();
-      }
+      async function startTrain(){ await fetch('/train', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({epochs:5})}); alert('Training started in background'); }
 
-      async function startTrain(){
-        await fetch('/train', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({epochs:5})});
-        alert('Training started (background)');
-      }
+      // keyboard controls
+      function handleKey(e){ const k = e.key.toLowerCase(); if(k==='arrowup' || k==='w') doStep(0); else if(k==='arrowdown' || k==='s') doStep(1); else if(k==='arrowleft' || k==='a') doStep(2); else if(k==='arrowright' || k==='d') doStep(3); }
 
+      // wire up UI
+      document.getElementById('goBtn').addEventListener('click', doSetLevel);
+      document.getElementById('resetBtn').addEventListener('click', doReset);
+      document.getElementById('helpBtn').addEventListener('click', async ()=>{ const j = await getHint(); if(j){ if(confirm('Apply suggestion?')){ await doStep(j.action); } else { highlightPath(j.path,1); } } });
+      document.getElementById('showPathBtn').addEventListener('click', showPath);
+      document.getElementById('autoFollowBtn').addEventListener('click', autoFollow);
+      document.getElementById('trainBtn').addEventListener('click', startTrain);
+      document.getElementById('upBtn').addEventListener('click', ()=>doStep(0));
+      document.getElementById('downBtn').addEventListener('click', ()=>doStep(1));
+      document.getElementById('leftBtn').addEventListener('click', ()=>doStep(2));
+      document.getElementById('rightBtn').addEventListener('click', ()=>doStep(3));
+      document.getElementById('logoutBtn').addEventListener('click', async function(){ await fetch('/logout'); window.location = '/login'; });
+
+      window.addEventListener('keydown', handleKey);
+
+      // initial load
       fetchState();
     </script>
   </body>
