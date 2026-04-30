@@ -1,0 +1,8 @@
+flask==3.0.3
+torch==2.3.1
+numpy==1.26.4
+Flask-SQLAlchemy==3.1.1
+Flask-Limiter==3.7.0
+gunicorn==22.0.0
+pytest==8.2.2
+flake8==7.1.0

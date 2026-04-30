@@ -1,0 +1,1297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NeuroMaze - Play</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f1e;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --border: rgba(255,255,255,0.07);
+      --accent: #10b981;
+      --accent2: #059669;
+      --danger: #f87171;
+      --path-color: #fbbf24;
+      --wall: #0d1117;
+      --floor: #1a2235;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --cell: 30px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAVBAR ── */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      height: 56px;
+      background: rgba(17,24,39,0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+
+    .nav-logo {
+      width: 34px; height: 34px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+
+    .nav-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #f0fdf4;
+      letter-spacing: -0.3px;
+    }
+
+    .nav-subtitle {
+      font-size: 11px;
+      color: #6ee7b7;
+      font-weight: 500;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-user {
+      font-size: 13px;
+      color: var(--muted);
+      padding: 0 8px;
+    }
+
+    .nav-user span { color: var(--text); font-weight: 600; }
+
+    /* ── LAYOUT ── */
+    .app-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: #0d1424;
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 16px 14px;
+      gap: 12px;
+      overflow-y: auto;
+    }
+
+    .sidebar-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sidebar-section::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+      opacity: 0.5;
+    }
+
+    .sidebar-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sidebar-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* stat cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    .stat-card-val {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      margin-bottom: 3px;
+    }
+
+    .stat-card-val.gold { color: #fbbf24; }
+    .stat-card-val.blue { color: #60a5fa; }
+    .stat-card-val.red  { color: #f87171; }
+
+    .stat-card-label {
+      font-size: 10px;
+      color: var(--muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* progress bar */
+    .progress-wrap {
+      margin-top: 10px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--surface2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #34d399);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    /* level selector */
+    .level-select-wrap {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    select#levelSelect {
+      flex: 1;
+      padding: 9px 10px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 13px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+
+    select#levelSelect:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(16,185,129,0.15); }
+
+    /* hint box */
+    .hint-box {
+      background: rgba(16,185,129,0.07);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #6ee7b7;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .hint-box.visible { display: block; }
+
+    .hint-direction {
+      font-size: 18px;
+      font-weight: 800;
+      color: #34d399;
+      margin-bottom: 2px;
+    }
+
+    /* training status */
+    .train-status {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .train-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+      margin-right: 5px;
+      vertical-align: middle;
+    }
+
+    .train-dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 6px rgba(16,185,129,0.6);
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── MAIN GAME AREA ── */
+    .game-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 20px 24px;
+      overflow: auto;
+      gap: 16px;
+      background: radial-gradient(ellipse 70% 50% at 50% 0%, rgba(16,185,129,0.04) 0%, transparent 60%);
+    }
+
+    /* level complete banner */
+    .level-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(5,150,105,0.08));
+      border: 1px solid rgba(16,185,129,0.35);
+      border-radius: 14px;
+      padding: 16px 28px;
+      text-align: center;
+      width: 100%;
+      max-width: 640px;
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-10px); opacity: 0; }
+      to   { transform: translateY(0);     opacity: 1; }
+    }
+
+    .level-banner.visible { display: block; }
+    .level-banner h3 { color: #34d399; font-size: 20px; margin-bottom: 4px; }
+    .level-banner p  { color: var(--muted); font-size: 13px; }
+
+    /* maze container */
+    .maze-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.05);
+    }
+
+    table.maze-grid {
+      border-collapse: collapse;
+    }
+
+    table.maze-grid td {
+      width: var(--cell);
+      height: var(--cell);
+      transition: background 60ms;
+    }
+
+    td.wall  { background: #080e1a; }
+    td.floor { background: #162032; }
+
+    td.agent {
+      background: var(--accent);
+      box-shadow: 0 0 12px rgba(16,185,129,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+
+    td.goal {
+      background: var(--danger);
+      box-shadow: 0 0 12px rgba(248,113,113,0.6), inset 0 1px 0 rgba(255,255,255,0.2);
+      border-radius: 3px;
+    }
+
+    td.path {
+      background: rgba(251,191,36,0.28);
+      box-shadow: inset 0 0 0 1px rgba(251,191,36,0.35);
+    }
+
+    /* ── CONTROLS ── */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 44px);
+      grid-template-rows: repeat(3, 44px);
+      gap: 5px;
+    }
+
+    .dpad-btn {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: var(--surface);
+      color: var(--text);
+      font-size: 15px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, transform 0.08s, box-shadow 0.12s;
+      user-select: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+
+    .dpad-btn:hover  { background: rgba(16,185,129,0.18); border-color: var(--accent); box-shadow: 0 0 12px rgba(16,185,129,0.2); }
+    .dpad-btn:active { transform: scale(0.88); background: rgba(16,185,129,0.3); }
+    .dpad-btn.empty  { background: transparent; border: none; box-shadow: none; cursor: default; pointer-events: none; }
+
+    .ctrl-divider { width: 1px; height: 50px; background: var(--border); }
+
+    .kbd-hint {
+      font-size: 12px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 2;
+    }
+
+    kbd {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-family: monospace;
+      color: var(--text);
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 9px 16px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.08s;
+      white-space: nowrap;
+    }
+
+    .btn:hover   { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
+    .btn:active  { transform: scale(0.97); }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-color: transparent;
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(16,185,129,0.25);
+    }
+
+    .btn-accent:hover { opacity: 0.88; }
+
+    .btn-yellow {
+      border-color: rgba(251,191,36,0.35);
+      color: #fbbf24;
+    }
+
+    .btn-yellow:hover { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.6); }
+
+    .btn-danger {
+      border-color: rgba(248,113,113,0.3);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover { background: rgba(248,113,113,0.1); }
+
+    .btn-sm { padding: 7px 13px; font-size: 12px; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(90px);
+      background: #1e293b;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 22px;
+      font-size: 14px;
+      color: var(--text);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+      z-index: 999;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .toast.show    { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: rgba(16,185,129,0.5);  color: #6ee7b7; background: #0d2018; }
+    .toast.error   { border-color: rgba(248,113,113,0.5); color: #fca5a5; background: #1f0d0d; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 820px) {
+      .app-body { flex-direction: column; }
+      .sidebar  { width: 100%; border-right: none; border-bottom: 1px solid var(--border); flex-direction: row; flex-wrap: wrap; padding: 12px; }
+      .sidebar-section { flex: 1; min-width: 180px; }
+      :root { --cell: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <a class="nav-brand" href="/">
+      <div class="nav-logo">
+        <svg viewBox="0 0 48 48" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 10 h10 v8 h8 v-8 h10 v28 h-10 v-8 h-8 v8 h-10 z" stroke="#fff" stroke-width="3" stroke-linejoin="round" fill="none"/>
+          <circle cx="13" cy="13" r="3" fill="#fff"/>
+          <circle cx="35" cy="35" r="3" fill="#f87171"/>
+        </svg>
+      </div>
+      <div>
+        <div class="nav-title">NeuroMaze</div>
+        <div class="nav-subtitle">RL · World Models · Planning</div>
+      </div>
+    </a>
+
+    <div class="nav-right">
+      <div class="nav-user">Logged in as <span id="navUser">—</span></div>
+      <button class="btn btn-sm btn-danger" id="logoutBtn">Logout</button>
+    </div>
+  </nav>
+
+  <!-- APP BODY -->
+  <div class="app-body">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- Stats -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Progress</div>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-card-val gold" id="totalScore">0</div>
+            <div class="stat-card-label">Score</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-val blue" id="currentLevel">1</div>
+            <div class="stat-card-label">Level</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-val" id="unlocked">1</div>
+            <div class="stat-card-label">Unlocked</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-val red" id="helpCount">0</div>
+            <div class="stat-card-label">Hints</div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span>Campaign Progress</span>
+            <span id="progressPct">1%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width:1%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Level selector -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Level Select</div>
+        <div class="level-select-wrap">
+          <select id="levelSelect" aria-label="Select level"></select>
+          <button class="btn btn-accent btn-sm" id="goBtn">Go</button>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:8px;">
+          <button class="btn btn-sm" id="resetBtn" style="flex:1">↺ Reset</button>
+          <button class="btn btn-sm btn-yellow" id="hintBtn" style="flex:1">💡 Hint</button>
+        </div>
+      </div>
+
+      <!-- Hint display -->
+      <div class="hint-box" id="hintBox">
+        <div class="hint-direction" id="hintDir"></div>
+        <div id="hintSrc"></div>
+      </div>
+
+      <!-- Path controls -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">Path Tools</div>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button class="btn btn-sm" id="showPathBtn">🗺 Show Full Path</button>
+          <button class="btn btn-sm" id="autoFollowBtn">▶ BFS Auto-Follow</button>
+          <button class="btn btn-sm" id="aiPlayBtn" style="border-color:rgba(99,102,241,0.4);color:#818cf8;">🤖 AI Auto-Play</button>
+          <div style="font-size:11px;color:#475569;line-height:1.5;padding:0 2px;">
+            BFS = shortest path &nbsp;·&nbsp; AI = RL agent plays live
+          </div>
+        </div>
+      </div>
+
+      <!-- Training -->
+      <div class="sidebar-section">
+        <div class="sidebar-label">AI Training</div>
+        <button class="btn btn-sm btn-accent" id="trainBtn" style="width:100%">⚡ Train World Model</button>
+        <div class="train-status" id="trainStatus">
+          <span class="train-dot" id="trainDot"></span>
+          Model not trained — hints use BFS fallback
+        </div>
+        <button class="btn btn-sm" id="openTrainDashBtn" style="width:100%;margin-top:8px;display:none;">
+          📊 View Training Dashboard
+        </button>
+      </div>
+
+    </aside>
+
+    <!-- GAME AREA -->
+    <main class="game-area">
+
+      <!-- Level complete banner -->
+      <div class="level-banner" id="levelBanner">
+        <h3 id="bannerTitle">Level Complete!</h3>
+        <p id="bannerMsg"></p>
+      </div>
+
+      <!-- Maze grid -->
+      <div class="maze-container" id="mazeContainer">
+        <div id="mazeGrid" style="line-height:0"></div>
+      </div>
+
+      <!-- D-pad controls -->
+      <div class="controls-bar">
+        <div class="dpad">
+          <div class="dpad-btn empty"></div>
+          <div class="dpad-btn" id="upBtn" title="Up (W / ↑)">▲</div>
+          <div class="dpad-btn empty"></div>
+          <div class="dpad-btn" id="leftBtn" title="Left (A / ←)">◀</div>
+          <div class="dpad-btn empty" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.3);">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="3" fill="rgba(255,255,255,0.15)"/></svg>
+          </div>
+          <div class="dpad-btn" id="rightBtn" title="Right (D / →)">▶</div>
+          <div class="dpad-btn empty"></div>
+          <div class="dpad-btn" id="downBtn" title="Down (S / ↓)">▼</div>
+          <div class="dpad-btn empty"></div>
+        </div>
+        <div class="ctrl-divider"></div>
+        <div class="kbd-hint">
+          <div><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></div>
+          <div style="margin-top:4px">or Arrow Keys</div>
+          <div style="margin-top:6px; font-size:11px; color:#334155;"><kbd>R</kbd> reset &nbsp; <kbd>H</kbd> hint</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TRAINING DASHBOARD MODAL
+  ══════════════════════════════════════════════════════════ -->
+  <div id="trainModal" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(0,0,0,0.7); backdrop-filter:blur(4px); align-items:center; justify-content:center;">
+    <div style="background:#111827; border:1px solid rgba(255,255,255,0.08); border-radius:20px; width:min(860px,96vw); max-height:90vh; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,0.6);">
+
+      <!-- Modal header -->
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:18px 24px; border-bottom:1px solid rgba(255,255,255,0.07);">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px;">🧠</div>
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#f1f5f9;">AI Training Dashboard</div>
+            <div style="font-size:12px;color:#64748b;" id="modalSubtitle">Environment → World Model → Planner → RL Agent → Action</div>
+          </div>
+        </div>
+        <button onclick="closeTrainModal()" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:13px;">✕ Close</button>
+      </div>
+
+      <!-- Modal body -->
+      <div style="overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:16px;">
+
+        <!-- Phase + progress bars -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+
+          <div style="background:#1a2235;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:10px;">Phase 1 — World Model</div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:6px;">
+              <span id="wmPhaseLabel">Waiting…</span>
+              <span id="wmEpochLabel">0 / 0</span>
+            </div>
+            <div style="height:8px;background:#0d1424;border-radius:999px;overflow:hidden;">
+              <div id="wmProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#10b981,#34d399);border-radius:999px;transition:width 0.4s ease;"></div>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:#64748b;" id="wmLossLabel">Loss: —</div>
+          </div>
+
+          <div style="background:#1a2235;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:10px;">Phase 2 — RL Agent</div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:6px;">
+              <span id="rlPhaseLabel">Waiting…</span>
+              <span id="rlEpLabel">0 / 0</span>
+            </div>
+            <div style="height:8px;background:#0d1424;border-radius:999px;overflow:hidden;">
+              <div id="rlProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:999px;transition:width 0.4s ease;"></div>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:#64748b;" id="rlRewardLabel">Imag. Reward: —</div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+          <div style="background:#1a2235;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:10px;">World Model Loss ↓</div>
+            <canvas id="lossChart" height="120" style="width:100%;display:block;"></canvas>
+          </div>
+          <div style="background:#1a2235;border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:14px;">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:10px;">RL Imagined Reward ↑</div>
+            <canvas id="rewardChart" height="120" style="width:100%;display:block;"></canvas>
+          </div>
+        </div>
+
+        <!-- Model status badges -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <div id="badgeWM"  style="padding:7px 14px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#64748b;">⬜ World Model: not trained</div>
+          <div id="badgeRL"  style="padding:7px 14px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#64748b;">⬜ RL Agent: not trained</div>
+          <div id="badgeHint" style="padding:7px 14px;border-radius:999px;font-size:12px;font-weight:600;background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);color:#64748b;">💡 Hints: BFS fallback</div>
+        </div>
+
+        <!-- Live log -->
+        <div style="background:#0d1424;border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#64748b;margin-bottom:10px;">Live Training Log</div>
+          <div id="trainLog" style="font-family:monospace;font-size:12px;line-height:1.8;max-height:200px;overflow-y:auto;color:#94a3b8;"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ── (width/height cached from /state, reused for /step responses)
+    let lastPath = null;
+    let autoFollowing = false;
+    let GW = 15;   // grid width  — set once from /state
+    let GH = 11;   // grid height — set once from /state
+    let unlockedLevel = 1;
+    let levelSelectPopulated = false;
+
+    // ── Toast ──
+    let toastTimer = null;
+    function showToast(msg, type = '') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show ' + type;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+    }
+
+    // ── Fetch state and render ──
+    async function fetchState() {
+      const res = await fetch('/state');
+      if (!res.ok) return;
+      const j = await res.json();
+      renderState(j);
+    }
+
+    function renderState(j) {
+      const s = j.state;
+      // Only update cached dimensions when the server sends them (from /state or /level)
+      if (j.width)  GW = j.width;
+      if (j.height) GH = j.height;
+      const w = GW;
+      const h = GH;
+
+      document.getElementById('totalScore').textContent  = j.total_score  != null ? j.total_score  : document.getElementById('totalScore').textContent;
+      document.getElementById('currentLevel').textContent = j.level       != null ? j.level        : document.getElementById('currentLevel').textContent;
+      document.getElementById('helpCount').textContent   = j.help_count   != null ? j.help_count   : document.getElementById('helpCount').textContent;
+
+      if (j.unlocked_level != null) {
+        unlockedLevel = j.unlocked_level;
+        document.getElementById('unlocked').textContent = unlockedLevel;
+        // update progress bar
+        const pct = Math.round((unlockedLevel / 100) * 100);
+        document.getElementById('progressFill').style.width = pct + '%';
+        document.getElementById('progressPct').textContent = pct + '%';
+      }
+
+      // Populate level selector once, then just update disabled states
+      const sel = document.getElementById('levelSelect');
+      if (!levelSelectPopulated) {
+        for (let i = 1; i <= 100; i++) sel.appendChild(new Option('Level ' + i, i));
+        levelSelectPopulated = true;
+      }
+      for (let i = 0; i < sel.options.length; i++) {
+        sel.options[i].disabled = (i + 1) > unlockedLevel;
+      }
+      if (j.level != null) sel.value = j.level;
+
+      // Build grid table — only if we have state data
+      if (!s || s.length === 0) return;
+      const tbl = document.createElement('table');
+      tbl.className = 'maze-grid';
+      for (let y = 0; y < h; y++) {
+        const tr = document.createElement('tr');
+        for (let x = 0; x < w; x++) {
+          const td = document.createElement('td');
+          const v = s[y * w + x];
+          if      (v === 1) td.className = 'wall';
+          else if (v === 2) td.className = 'agent';
+          else if (v === 3) td.className = 'goal';
+          else              td.className = 'floor';
+          tr.appendChild(td);
+        }
+        tbl.appendChild(tr);
+      }
+      const container = document.getElementById('mazeGrid');
+      container.innerHTML = '';
+      container.appendChild(tbl);
+
+      // Re-apply path highlight if we have one
+      if (lastPath) highlightPath(lastPath);
+    }
+
+    // ── Step ──
+    async function doStep(action) {
+      if (autoFollowing) return;
+      const res = await fetch('/step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+      if (!res.ok) return;
+      const j = await res.json();
+      // /step response has state but no width/height — renderState uses cached GW/GH
+      renderState(j);
+      lastPath = null;
+
+      if (j.level_completed) {
+        document.getElementById('bannerTitle').textContent = '🎉 Level ' + j.level + ' Complete!';
+        document.getElementById('bannerMsg').textContent =
+          'Score earned: +' + j.level_score + ' pts  ·  Total: ' + j.total_score +
+          '  ·  Level ' + j.unlocked_level + ' unlocked';
+        document.getElementById('levelBanner').className = 'level-banner visible';
+        showToast('+' + j.level_score + ' pts — Level ' + j.level + ' complete!', 'success');
+        setTimeout(() => { document.getElementById('levelBanner').className = 'level-banner'; }, 5000);
+        // refresh full state so level selector updates
+        await fetchState();
+      }
+    }
+
+    // ── Reset ──
+    async function doReset() {
+      lastPath = null;
+      document.getElementById('levelBanner').className = 'level-banner';
+      document.getElementById('hintBox').className = 'hint-box';
+      await fetch('/reset');
+      await fetchState();   // always fetch full state after reset
+    }
+
+    // ── Set level ──
+    async function doSetLevel() {
+      const lvl = Number(document.getElementById('levelSelect').value || 1);
+      const res = await fetch('/level', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level: lvl })
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        showToast('Level ' + lvl + ' is locked! Complete earlier levels first.', 'error');
+        // reset selector back to current level
+        document.getElementById('levelSelect').value = document.getElementById('currentLevel').textContent;
+        return;
+      }
+      lastPath = null;
+      document.getElementById('levelBanner').className = 'level-banner';
+      document.getElementById('hintBox').className = 'hint-box';
+      // /level returns state with width+height — use fetchState to get full info
+      await fetchState();
+      showToast('Switched to Level ' + lvl, '');
+    }
+
+    // ── Hint ──
+    async function getHint() {
+      const res = await fetch('/help');
+      const j = await res.json();
+      if (j.action === null) {
+        showToast('No path found — try Reset.', 'error');
+        return null;
+      }
+      lastPath = j.path || null;
+      const dirs = ['⬆ Up', '⬇ Down', '⬅ Left', '➡ Right'];
+      const srcLabels = { bfs: 'BFS pathfinding', rl_agent: 'RL Agent', mpc_planner: 'MPC Planner' };
+      document.getElementById('hintDir').textContent = dirs[j.action];
+      document.getElementById('hintSrc').textContent = 'Source: ' + (srcLabels[j.source] || j.source);
+      document.getElementById('hintBox').className = 'hint-box visible';
+      if (lastPath) highlightPath(lastPath);
+      return j;
+    }
+
+    // ── Path highlight ──
+    function highlightPath(path) {
+      const tbl = document.querySelector('table.maze-grid');
+      if (!tbl || !path) return;
+      // clear old path cells
+      tbl.querySelectorAll('td.path').forEach(td => { td.className = 'floor'; });
+      for (let i = 0; i < path.length; i++) {
+        const p = path[i];
+        const row = tbl.rows[p[0]];
+        if (!row) continue;
+        const td = row.cells[p[1]];
+        if (!td) continue;
+        if (td.className !== 'agent' && td.className !== 'goal') {
+          td.className = 'path';
+        }
+      }
+    }
+
+    // ── Show path ──
+    async function showPath() {
+      if (!lastPath) {
+        await getHint();
+        return;
+      }
+      highlightPath(lastPath);
+    }
+
+    // ── Auto-follow ──
+    // ── Auto-follow ──
+    // BFS mode: guaranteed shortest path, always works
+    // AI mode:  RL agent / MPC planner drives every step (real AI navigation)
+    async function autoFollow(mode) {
+      if (autoFollowing) return;
+      autoFollowing = true;
+
+      const btn   = document.getElementById('autoFollowBtn');
+      const btnAI = document.getElementById('aiPlayBtn');
+      const isAI  = (mode === 'ai');
+
+      if (isAI) { if (btnAI) btnAI.textContent = 'Stop'; }
+      else       { if (btn)   btn.textContent   = 'Stop'; }
+
+      if (!isAI) {
+        // BFS: get path once, follow exactly
+        const r = await fetch('/ai_action');
+        const j = await r.json().catch(() => ({}));
+        const bfsPath = j.path;
+        if (!bfsPath || bfsPath.length < 2) {
+          showToast('No path found - try Reset first.', 'error');
+          autoFollowing = false;
+          if (btn) btn.textContent = 'BFS Auto-Follow';
+          return;
+        }
+        highlightPath(bfsPath);
+        let steps = 0;
+        for (let i = 1; i < bfsPath.length; i++) {
+          if (!autoFollowing) break;
+          const cur = bfsPath[i-1], nxt = bfsPath[i];
+          const dy = nxt[0]-cur[0], dx = nxt[1]-cur[1];
+          const a  = (dy===-1)?0:(dy===1)?1:(dx===-1)?2:3;
+          const res = await fetch('/step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:a})});
+          if (!res.ok) break;
+          const sj = await res.json();
+          renderState(sj); steps++;
+          if (sj.level_completed) {
+            document.getElementById('bannerTitle').textContent = 'Level '+sj.level+' Complete!';
+            document.getElementById('bannerMsg').textContent   = 'BFS solved in '+steps+' steps (optimal)  Score: +'+sj.level_score;
+            document.getElementById('levelBanner').className = 'level-banner visible';
+            showToast('BFS: Level '+sj.level+' in '+steps+' steps!','success');
+            setTimeout(()=>{document.getElementById('levelBanner').className='level-banner';},5000);
+            await fetchState(); break;
+          }
+          await new Promise(r=>setTimeout(r,120));
+        }
+      } else {
+        // AI mode: agent picks every action itself
+        let aiReady = false;
+        try { const ts=await(await fetch('/training_status')).json(); aiReady=ts.agent_ready||ts.model_ready; } catch(e){}
+        if (!aiReady) {
+          showToast('Train the AI first! Click Train World Model.','error');
+          autoFollowing=false; if(btnAI) btnAI.textContent='AI Auto-Play';
+          return;
+        }
+        showToast('AI is navigating - watch the hint box!','success');
+        let steps=0, stuckCount=0, lastPos='';
+        while (autoFollowing && steps<300) {
+          const ar = await fetch('/ai_action');
+          if (!ar.ok) break;
+          const aj = await ar.json();
+          if (aj.action===null) { showToast('AI: no path found.','error'); break; }
+          const dirs=['Up','Down','Left','Right'];
+          const srcMap={mpc_planner:'MPC Planner',rl_agent:'RL Agent',bfs:'BFS'};
+          document.getElementById('hintDir').textContent = dirs[aj.action];
+          document.getElementById('hintSrc').textContent = 'AI ('+( srcMap[aj.source]||aj.source)+')';
+          document.getElementById('hintBox').className   = 'hint-box visible';
+          const sr = await fetch('/step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:aj.action})});
+          if (!sr.ok) break;
+          const sj = await sr.json();
+          renderState(sj); steps++;
+          const posKey = String(sj.state?sj.state.indexOf(2):-1);
+          if (posKey===lastPos) { stuckCount++; if(stuckCount>=5){showToast('AI stuck after '+steps+' steps. Try Retrain.','error');break;} }
+          else { stuckCount=0; lastPos=posKey; }
+          if (sj.level_completed) {
+            document.getElementById('bannerTitle').textContent = 'Level '+sj.level+' Complete!';
+            document.getElementById('bannerMsg').textContent   = 'AI solved in '+steps+' steps  Score: +'+sj.level_score+' pts  Total: '+sj.total_score;
+            document.getElementById('levelBanner').className = 'level-banner visible';
+            showToast('AI solved Level '+sj.level+' in '+steps+' steps!','success');
+            setTimeout(()=>{document.getElementById('levelBanner').className='level-banner';},6000);
+            await fetchState(); break;
+          }
+          await new Promise(r=>setTimeout(r,220));
+        }
+      }
+      autoFollowing=false; lastPath=null;
+      if(btn)   btn.textContent  ='BFS Auto-Follow';
+      if(btnAI) btnAI.textContent='AI Auto-Play';
+    }
+    // ── Training Dashboard ──
+    let trainPollTimer = null;
+    let lossPoints   = [];
+    let rewardPoints = [];
+
+    function openTrainModal()  { document.getElementById('trainModal').style.display = 'flex'; }
+    function closeTrainModal() { document.getElementById('trainModal').style.display = 'none'; }
+
+    // Simple canvas sparkline
+    function drawChart(canvasId, points, color, yLabel) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas || points.length < 2) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.offsetWidth || 300;
+      const H = canvas.height;
+      canvas.width = W;
+      ctx.clearRect(0, 0, W, H);
+
+      const vals = points.map(p => p.v);
+      const minV = Math.min(...vals);
+      const maxV = Math.max(...vals);
+      const range = maxV - minV || 1;
+
+      const pad = { t: 10, b: 24, l: 8, r: 8 };
+      const gW = W - pad.l - pad.r;
+      const gH = H - pad.t - pad.b;
+
+      // grid lines
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.t + (i / 4) * gH;
+        ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+      }
+
+      // gradient fill
+      const grad = ctx.createLinearGradient(0, pad.t, 0, pad.t + gH);
+      grad.addColorStop(0, color + '55');
+      grad.addColorStop(1, color + '00');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = pad.l + (i / (points.length - 1)) * gW;
+        const y = pad.t + gH - ((p.v - minV) / range) * gH;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.lineTo(pad.l + gW, pad.t + gH);
+      ctx.lineTo(pad.l, pad.t + gH);
+      ctx.closePath();
+      ctx.fill();
+
+      // line
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      points.forEach((p, i) => {
+        const x = pad.l + (i / (points.length - 1)) * gW;
+        const y = pad.t + gH - ((p.v - minV) / range) * gH;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+      });
+      ctx.stroke();
+
+      // last value label
+      const last = points[points.length - 1];
+      const lx = pad.l + gW;
+      const ly = pad.t + gH - ((last.v - minV) / range) * gH;
+      ctx.fillStyle = color;
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(last.v.toFixed(4), lx, Math.max(ly - 4, pad.t + 10));
+
+      // x-axis labels
+      ctx.fillStyle = '#475569';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      [0, Math.floor(points.length / 2), points.length - 1].forEach(i => {
+        const x = pad.l + (i / (points.length - 1)) * gW;
+        ctx.fillText(points[i].x, x, H - 4);
+      });
+    }
+
+    function updateBadge(id, text, active) {
+      const el = document.getElementById(id);
+      if (active) {
+        el.style.background = 'rgba(16,185,129,0.12)';
+        el.style.borderColor = 'rgba(16,185,129,0.35)';
+        el.style.color = '#34d399';
+      } else {
+        el.style.background = 'rgba(100,116,139,0.1)';
+        el.style.borderColor = 'rgba(100,116,139,0.2)';
+        el.style.color = '#64748b';
+      }
+      el.textContent = text;
+    }
+
+    async function pollTraining() {
+      try {
+        const res = await fetch('/training_status');
+        const j = await res.json();
+
+        // ── Progress bars ──
+        const wmPct = j.total_epochs > 0 ? Math.round((j.epoch / j.total_epochs) * 100) : 0;
+        const rlPct = j.rl_total   > 0 ? Math.round((j.rl_ep / j.rl_total)   * 100) : 0;
+
+        document.getElementById('wmProgressBar').style.width = wmPct + '%';
+        document.getElementById('rlProgressBar').style.width = rlPct + '%';
+        document.getElementById('wmEpochLabel').textContent = j.epoch + ' / ' + j.total_epochs;
+        document.getElementById('rlEpLabel').textContent    = j.rl_ep + ' / ' + j.rl_total;
+
+        const phaseLabels = {
+          world_model: '🔄 Training…',
+          rl_agent:    '🔄 Training…',
+          done:        '✅ Complete',
+          error:       '❌ Error',
+          '':          'Waiting…'
+        };
+
+        document.getElementById('wmPhaseLabel').textContent =
+          (j.phase === 'world_model' || j.phase === 'done') ? phaseLabels[j.phase] || '—' : (j.phase === 'rl_agent' ? '✅ Done' : 'Waiting…');
+        document.getElementById('rlPhaseLabel').textContent =
+          j.phase === 'rl_agent' ? '🔄 Training…' : (j.phase === 'done' ? '✅ Complete' : 'Waiting…');
+
+        // ── Loss chart ──
+        if (j.wm_losses && j.wm_losses.length > 0) {
+          lossPoints = j.wm_losses.map(p => ({ x: p.epoch, v: p.loss }));
+          const last = lossPoints[lossPoints.length - 1];
+          document.getElementById('wmLossLabel').textContent = 'Loss: ' + last.v.toFixed(5);
+          drawChart('lossChart', lossPoints, '#10b981', 'loss');
+        }
+
+        // ── Reward chart ──
+        if (j.rl_rewards && j.rl_rewards.length > 0) {
+          rewardPoints = j.rl_rewards.map(p => ({ x: p.ep, v: p.reward }));
+          const last = rewardPoints[rewardPoints.length - 1];
+          document.getElementById('rlRewardLabel').textContent = 'Imag. Reward: ' + last.v.toFixed(2);
+          drawChart('rewardChart', rewardPoints, '#6366f1', 'reward');
+        }
+
+        // ── Log ──
+        const logEl = document.getElementById('trainLog');
+        if (j.log && j.log.length > 0) {
+          const colors = { phase: '#34d399', success: '#6ee7b7', epoch: '#94a3b8', error: '#fca5a5', info: '#64748b' };
+          logEl.innerHTML = j.log.map(l =>
+            `<div style="color:${colors[l.kind] || '#94a3b8'}">${l.msg}</div>`
+          ).join('');
+          logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        // ── Badges ──
+        updateBadge('badgeWM',   j.model_ready ? '✅ World Model: ready' : '⬜ World Model: not trained', j.model_ready);
+        updateBadge('badgeRL',   j.agent_ready ? '✅ RL Agent: ready'    : '⬜ RL Agent: not trained',    j.agent_ready);
+        updateBadge('badgeHint', j.agent_ready ? '💡 Hints: RL Agent'    : (j.model_ready ? '💡 Hints: MPC Planner' : '💡 Hints: BFS fallback'), j.agent_ready || j.model_ready);
+
+        // ── Subtitle ──
+        const subtitles = {
+          world_model: `Training epoch ${j.epoch}/${j.total_epochs} — learning environment dynamics`,
+          rl_agent:    `RL episode ${j.rl_ep}/${j.rl_total} — imagination rollouts inside world model`,
+          done:        'Training complete — models hot-reloaded into app',
+          error:       'Training encountered an error — check log below',
+          '':          'Environment → World Model → Planner → RL Agent → Action'
+        };
+        document.getElementById('modalSubtitle').textContent = subtitles[j.phase] || subtitles[''];
+
+        // ── Sidebar status ──
+        if (j.active) {
+          const sideMsg = j.phase === 'world_model'
+            ? `Phase 1: WM epoch ${j.epoch}/${j.total_epochs}`
+            : j.phase === 'rl_agent'
+            ? `Phase 2: RL ep ${j.rl_ep}/${j.rl_total}`
+            : 'Training…';
+          document.getElementById('trainStatus').innerHTML =
+            `<span class="train-dot active"></span> ${sideMsg}`;
+        } else if (j.phase === 'done') {
+          document.getElementById('trainStatus').innerHTML =
+            `<span class="train-dot active"></span> Training complete — RL agent active`;
+          document.getElementById('trainBtn').textContent = '⚡ Retrain';
+          document.getElementById('trainBtn').disabled = false;
+          document.getElementById('openTrainDashBtn').style.display = 'block';
+          clearInterval(trainPollTimer);
+          trainPollTimer = null;
+        } else if (j.phase === 'error') {
+          document.getElementById('trainStatus').innerHTML =
+            `<span class="train-dot" style="background:#f87171"></span> Training error`;
+          document.getElementById('trainBtn').textContent = '⚡ Retry Training';
+          document.getElementById('trainBtn').disabled = false;
+          clearInterval(trainPollTimer);
+          trainPollTimer = null;
+        }
+
+      } catch (e) {
+        // network error — keep polling
+      }
+    }
+
+    async function startTraining() {
+      const btn = document.getElementById('trainBtn');
+      btn.textContent = '⏳ Training…';
+      btn.disabled = true;
+      lossPoints = [];
+      rewardPoints = [];
+      document.getElementById('trainLog').innerHTML = '';
+      document.getElementById('wmProgressBar').style.width = '0%';
+      document.getElementById('rlProgressBar').style.width = '0%';
+
+      try {
+        const res = await fetch('/train', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ epochs: 10, rl_episodes: 30 })
+        });
+        if (res.status === 409) {
+          showToast('Training already running!', 'error');
+          btn.textContent = '⏳ Training…';
+          btn.disabled = true;
+        } else {
+          showToast('Training started — opening dashboard', 'success');
+          openTrainModal();
+          document.getElementById('openTrainDashBtn').style.display = 'block';
+        }
+      } catch (e) {
+        showToast('Could not start training.', 'error');
+        btn.textContent = '⚡ Train World Model';
+        btn.disabled = false;
+        return;
+      }
+
+      // Start polling every 1.5 seconds
+      if (trainPollTimer) clearInterval(trainPollTimer);
+      trainPollTimer = setInterval(pollTraining, 1500);
+    }
+
+    // ── Keyboard ──
+    document.addEventListener('keydown', e => {
+      if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      const k = e.key;
+      if (k === 'ArrowUp'    || k === 'w' || k === 'W') { e.preventDefault(); doStep(0); }
+      else if (k === 'ArrowDown'  || k === 's' || k === 'S') { e.preventDefault(); doStep(1); }
+      else if (k === 'ArrowLeft'  || k === 'a' || k === 'A') { e.preventDefault(); doStep(2); }
+      else if (k === 'ArrowRight' || k === 'd' || k === 'D') { e.preventDefault(); doStep(3); }
+      else if (k === 'r' || k === 'R') doReset();
+      else if (k === 'h' || k === 'H') getHint();
+    });
+
+    // ── Wire buttons ──
+    document.getElementById('goBtn').addEventListener('click', doSetLevel);
+    document.getElementById('resetBtn').addEventListener('click', doReset);
+    document.getElementById('hintBtn').addEventListener('click', async () => {
+      const j = await getHint();
+      if (j) {
+        const dirs = ['Up','Down','Left','Right'];
+        showToast('💡 Move ' + dirs[j.action] + ' · ' + j.source, '');
+      }
+    });
+    document.getElementById('showPathBtn').addEventListener('click', showPath);
+    document.getElementById('autoFollowBtn').addEventListener('click', () => {
+      if (autoFollowing) { autoFollowing = false; return; }
+      autoFollow('bfs');
+    });
+    document.getElementById('aiPlayBtn').addEventListener('click', () => {
+      if (autoFollowing) { autoFollowing = false; return; }
+      autoFollow('ai');
+    });
+    document.getElementById('trainBtn').addEventListener('click', startTraining);
+    document.getElementById('openTrainDashBtn').addEventListener('click', openTrainModal);
+    document.getElementById('upBtn').addEventListener('click', () => doStep(0));
+    document.getElementById('downBtn').addEventListener('click', () => doStep(1));
+    document.getElementById('leftBtn').addEventListener('click', () => doStep(2));
+    document.getElementById('rightBtn').addEventListener('click', () => doStep(3));
+    document.getElementById('logoutBtn').addEventListener('click', async () => {
+      await fetch('/logout');
+      window.location = '/login';
+    });
+
+    // ── Load user info ──
+    fetch('/user').then(r => r.json()).then(j => {
+      if (j.user) document.getElementById('navUser').textContent = j.user;
+    });
+
+    // ── Initial load ──
+    fetchState();
+
+    // ── Check if models already exist on page load ──
+    fetch('/training_status').then(r => r.json()).then(j => {
+      if (j.model_ready || j.agent_ready) {
+        document.getElementById('openTrainDashBtn').style.display = 'block';
+        const src = j.agent_ready ? 'RL Agent' : 'MPC Planner';
+        document.getElementById('trainStatus').innerHTML =
+          `<span class="train-dot active"></span> Models loaded — hints use ${src}`;
+        document.getElementById('trainBtn').textContent = '⚡ Retrain';
+      }
+      if (j.active) {
+        document.getElementById('trainBtn').textContent = '⏳ Training…';
+        document.getElementById('trainBtn').disabled = true;
+        document.getElementById('openTrainDashBtn').style.display = 'block';
+        if (!trainPollTimer) trainPollTimer = setInterval(pollTraining, 1500);
+      }
+    });
+  </script>
+</body>
+</html>

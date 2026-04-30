@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>NeuroMaze — Sign In</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0f1e;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(16,185,129,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 80% 90%, rgba(99,102,241,0.07) 0%, transparent 60%);
+      color: #e2e8f0;
+      padding: 20px;
+    }
+
+    /* animated grid background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(16,185,129,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16,185,129,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .page-wrap {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 960px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+    }
+
+    /* LEFT — branding panel */
+    .brand-panel {
+      background: linear-gradient(145deg, #0d2818 0%, #0b1f30 50%, #0d1a2e 100%);
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      top: -60px; right: -60px;
+      width: 260px; height: 260px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%);
+    }
+
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      bottom: -40px; left: -40px;
+      width: 200px; height: 200px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%);
+    }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 32px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(16,185,129,0.35);
+      flex-shrink: 0;
+    }
+
+    .app-name {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #f0fdf4;
+    }
+
+    .app-tagline {
+      font-size: 13px;
+      color: #6ee7b7;
+      font-weight: 500;
+      margin-top: 2px;
+    }
+
+    .brand-headline {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f0fdf4;
+      line-height: 1.4;
+      margin-bottom: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand-headline span { color: #34d399; }
+
+    .brand-desc {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.7;
+      position: relative;
+      z-index: 1;
+    }
+
+    .feature-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 28px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .pill {
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: #6ee7b7;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+
+    /* RIGHT — form panel */
+    .form-panel {
+      background: #111827;
+      padding: 52px 44px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .form-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+
+    .form-sub {
+      font-size: 14px;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+
+    .field input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04);
+      color: #f1f5f9;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .field input:focus {
+      border-color: #10b981;
+      box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+    }
+
+    .field input::placeholder { color: #475569; }
+
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: none;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.1s;
+      margin-top: 4px;
+    }
+
+    .btn-primary:hover { opacity: 0.92; }
+    .btn-primary:active { transform: scale(0.98); }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: #334155;
+      font-size: 13px;
+    }
+
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.07);
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+      background: transparent;
+      color: #94a3b8;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      text-decoration: none;
+      display: block;
+      text-align: center;
+    }
+
+    .btn-secondary:hover { background: rgba(255,255,255,0.05); color: #e2e8f0; }
+
+    .msg-box {
+      margin-top: 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .msg-box.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #fca5a5; display: block; }
+    .msg-box.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); color: #6ee7b7; display: block; }
+
+    @media (max-width: 680px) {
+      .page-wrap { grid-template-columns: 1fr; }
+      .brand-panel { padding: 36px 28px; }
+      .form-panel { padding: 36px 28px; }
+      .brand-headline { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-wrap">
+
+    <!-- LEFT: Branding -->
+    <div class="brand-panel">
+      <div class="logo-wrap">
+        <div class="logo-icon">
+          <svg viewBox="0 0 48 48" width="36" height="36" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="40" height="40" rx="6" fill="rgba(255,255,255,0.08)"/>
+            <!-- maze path lines -->
+            <path d="M10 10 h10 v8 h8 v-8 h10 v28 h-10 v-8 h-8 v8 h-10 z" stroke="#fff" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+            <circle cx="13" cy="13" r="2.5" fill="#34d399"/>
+            <circle cx="35" cy="35" r="2.5" fill="#f87171"/>
+          </svg>
+        </div>
+        <div>
+          <div class="app-name">NeuroMaze</div>
+          <div class="app-tagline">RL · World Models · Planning</div>
+        </div>
+      </div>
+
+      <div class="brand-headline">
+        Navigate with<br><span>AI-powered planning</span>
+      </div>
+
+      <p class="brand-desc">
+        Solve procedurally generated mazes guided by a learned latent world model and MPC planner. Train the RL agent, watch it imagine futures, and beat 100 levels.
+      </p>
+
+      <div class="feature-pills">
+        <span class="pill">Latent World Model</span>
+        <span class="pill">MPC Planner</span>
+        <span class="pill">REINFORCE Agent</span>
+        <span class="pill">100 Levels</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Form -->
+    <div class="form-panel">
+      <div class="form-title">Welcome back</div>
+      <div class="form-sub">Sign in to continue your progress</div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" placeholder="Enter your username" autocomplete="username">
+      </div>
+
+      <div class="field">
+        <label for="password">Password <span style="color:#475569;font-weight:400">(optional for new accounts)</span></label>
+        <input id="password" type="password" placeholder="Enter your password" autocomplete="current-password">
+      </div>
+
+      <button class="btn-primary" id="loginBtn">Sign In</button>
+
+      <div class="divider">or</div>
+
+      <a href="/register" class="btn-secondary">Create a new account</a>
+
+      <div id="msg" class="msg-box"></div>
+    </div>
+  </div>
+
+  <script>
+    const msgEl = document.getElementById('msg');
+
+    function showMsg(text, isError) {
+      msgEl.textContent = text;
+      msgEl.className = 'msg-box ' + (isError ? 'error' : 'success');
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const u = (document.getElementById('username').value || '').trim();
+      const p = (document.getElementById('password').value || '');
+      if (!u) { showMsg('Please enter a username.', true); return; }
+
+      const btn = document.getElementById('loginBtn');
+      btn.textContent = 'Signing in…';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p })
+        });
+        const j = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showMsg(j.error === 'invalid_credentials' ? 'Wrong password.' : (j.error || 'Login failed.'), true);
+        } else {
+          showMsg('Signed in! Loading…', false);
+          window.location = '/';
+        }
+      } catch (e) {
+        showMsg('Network error. Is the server running?', true);
+      } finally {
+        btn.textContent = 'Sign In';
+        btn.disabled = false;
+      }
+    });
+
+    // Allow Enter key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Enter') document.getElementById('loginBtn').click();
+    });
+
+    document.getElementById('username').focus();
+  </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: neuromaze
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 300 --access-logfile - app:app
+    envVars:
+      - key: FLASK_SECRET
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: 3.11.0
+    disk:
+      name: neuromaze-data
+      mountPath: /app/instance
+      sizeGB: 1
